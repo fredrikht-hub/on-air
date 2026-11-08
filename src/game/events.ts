@@ -1,0 +1,38 @@
+import type { TextStyle } from './eras';
+import { generateStory, styleText } from './headlines';
+import type { StoryPlan } from './state';
+import { nextArcChapter, type ArcState } from './stories';
+
+/** Visitors: a famous guest shows up and every word pays more for a short time. */
+export const VISITORS = [
+  { emoji: '👑', label: 'The King rides through town!', short: "King's visit", mult: 3, seconds: 20 },
+  { emoji: '🎩', label: 'A famous author visits the newsroom!', short: 'Author visit', mult: 3, seconds: 20 },
+  { emoji: '🌟', label: 'A movie star walks into the studio!', short: 'Star guest', mult: 3, seconds: 20 },
+];
+
+/** Golden words: chance that a headline contains one golden word */
+export const GOLDEN_CHANCE = 0.3;
+export const GOLDEN_MULT = 10;
+
+/** Breaking News: every word pays this much more, and beating the timer gives a jackpot */
+export const BREAKING_WORD_MULT = 2;
+export const BREAKING_JACKPOT = 3; // × what the story earned
+
+/** words to type between surprise events */
+export const eventGap = (first: boolean) => (first ? 25 : 40) + Math.floor(Math.random() * 30);
+
+/** decide the next headline: a story chapter (if due) or a fresh random headline */
+export function planStory(style: TextStyle, arcs: ArcState): StoryPlan {
+  const ch = nextArcChapter(arcs);
+  if (ch) return { text: styleText(style, ch.arc.parts[ch.part]), arc: { id: ch.arc.id, part: ch.part } };
+  return { text: generateStory(style) };
+}
+
+/** pick a golden word index (a longer word), or -1 */
+export function pickGolden(text: string): number {
+  if (Math.random() > GOLDEN_CHANCE) return -1;
+  const words = text.split(' ');
+  const options = words.map((w, i) => ({ w, i })).filter((o) => o.w.length >= 4 && o.i > 0);
+  if (!options.length) return -1;
+  return options[Math.floor(Math.random() * options.length)].i;
+}
