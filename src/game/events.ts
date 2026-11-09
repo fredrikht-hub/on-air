@@ -2,6 +2,7 @@ import type { TextStyle } from './eras';
 import { generateAd, generateStory, styleText } from './headlines';
 import type { StoryPlan } from './state';
 import { nextArcChapter, type ArcState } from './stories';
+import { pickCity } from './world';
 
 /** Visitors: a famous guest shows up and every word pays more for a short time. */
 export const VISITORS = [
@@ -9,6 +10,7 @@ export const VISITORS = [
   { emoji: '🎩', label: 'A famous author visits the newsroom!', short: 'Author visit', mult: 3, seconds: 20 },
   { emoji: '🌟', label: 'A movie star walks into the studio!', short: 'Star guest', mult: 3, seconds: 20 },
   { emoji: '🎸', label: 'A rock and roll star drops by the TV studio!', short: 'Rock star', mult: 3, seconds: 20 },
+  { emoji: '👩‍🚀', label: 'An astronaut calls in live from space!', short: 'Astronaut', mult: 3, seconds: 20 },
 ];
 
 /** Golden words: chance that a headline contains one golden word */
@@ -27,11 +29,21 @@ export const AD_CHANCE = 0.16;
 export const PUNCT_MULT = 2;
 export const hasPunct = (w: string) => /[,.!?;:]/.test(w);
 
+/** words with numbers (Global News and later) pay this much more when typed perfectly */
+export const DIGIT_MULT = 2;
+export const hasDigit = (w: string) => /[0-9]/.test(w);
+
 /** words to type between surprise events */
 export const eventGap = (first: boolean) => (first ? 25 : 40) + Math.floor(Math.random() * 30);
 
 /** decide the next headline: a story chapter (if due) or a fresh random headline */
-export function planStory(style: TextStyle, arcs: ArcState): StoryPlan {
+export function planStory(style: TextStyle, arcs: ArcState, lifetimeCash = 0): StoryPlan {
+  if (style === 'global') {
+    const city = pickCity(lifetimeCash);
+    const ch = nextArcChapter(arcs);
+    const body = ch ? styleText(style, ch.arc.parts[ch.part]) : generateStory(style);
+    return { text: `${city.name}: ${body}`, city: city.id, arc: ch ? { id: ch.arc.id, part: ch.part } : undefined };
+  }
   const ch = nextArcChapter(arcs);
   if (ch) return { text: styleText(style, ch.arc.parts[ch.part]), arc: { id: ch.arc.id, part: ch.part } };
   if (style === 'tv' && Math.random() < AD_CHANCE) return { text: generateAd(), ad: true };

@@ -484,7 +484,7 @@ export function TVScene() {
       {goalCost != null && (
         <div className={`goal ${s.cash >= goalCost ? 'ready' : ''}`}>
           <span className="goal-text">
-            🎯 <b>Goal:</b> save {money(goalCost)} to launch <b>24/7 Cable News</b> 📡 {!next?.playable && <small>(coming soon)</small>}
+            🎯 <b>Goal:</b> save {money(goalCost)} to launch <b>Global News</b> 🛰️ {!next?.playable && <small>(coming soon)</small>}
           </span>
           <span className="goal-bar"><span style={{ width: `${tv.buildPct * 100}%` }} /></span>
         </div>

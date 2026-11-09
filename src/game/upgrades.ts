@@ -13,6 +13,8 @@ export interface Mods {
   freshMult: number;
   offlineHours: number;
   moodGain: number;
+  /** Global News: words from a city where the sun is rising pay this much */
+  sunriseMult: number;
 }
 
 export const BASE_MODS: Mods = {
@@ -28,6 +30,7 @@ export const BASE_MODS: Mods = {
   freshMult: 2,
   offlineHours: 2,
   moodGain: 1,
+  sunriseMult: 2,
 };
 
 export type Effect =
@@ -41,7 +44,8 @@ export type Effect =
   | { kind: 'backlog'; cap: number; rateX: number }
   | { kind: 'fresh'; add: number }
   | { kind: 'offline'; hours: number }
-  | { kind: 'mood'; x: number };
+  | { kind: 'mood'; x: number }
+  | { kind: 'sunrise'; add: number };
 
 export interface UpgradeDef {
   id: string;
@@ -106,6 +110,21 @@ export const UPGRADES: UpgradeDef[] = [
   { id: 'tv-satellite', name: 'Satellite Dish', emoji: '📡', era: 3, cost: 8_000_000_000_000, desc: 'Beam your show across the ocean — ALL helpers earn 2×.', effect: { kind: 'allStaff', x: 2 } },
   { id: 'tv-budget', name: 'Big Budget', emoji: '💼', era: 3, cost: 20_000_000_000_000, desc: 'TV Producers make twice the shows.', needs: { staff: 'producer', count: 5 }, effect: { kind: 'staff', id: 'producer', x: 2 } },
   { id: 'tv-famous', name: 'Famous Face', emoji: '😎', era: 3, cost: 35_000_000_000_000, desc: "Everybody knows your face — each word also earns more of your helpers' money.", effect: { kind: 'idleShare', add: 1 } },
+
+  // --- Global News ---
+  { id: 'g-rocket', name: 'Launch Another Satellite', emoji: '🚀', era: 4, cost: 150_000_000_000_000, desc: 'A second satellite — twice the planet can see you! Words earn 3×.', effect: { kind: 'wordMult', x: 3 } },
+  { id: 'g-phone', name: 'Satellite Phone', emoji: '☎️', era: 4, cost: 300_000_000_000_000, desc: 'Call anyone, anywhere — keep your combo going longer.', effect: { kind: 'comboCap', add: 0.5 } },
+  { id: 'g-passport', name: 'Golden Passports', emoji: '🛂', era: 4, cost: 500_000_000_000_000, desc: 'Foreign Correspondents skip every line at the airport — 2× stories.', needs: { staff: 'correspondent', count: 5 }, effect: { kind: 'staff', id: 'correspondent', x: 2 } },
+  { id: 'g-ticker', name: 'World News Ticker', emoji: '📜', era: 4, cost: 1_000_000_000_000_000, desc: 'Headlines from everywhere — lots more news piles up for you.', effect: { kind: 'backlog', cap: 30, rateX: 2 } },
+  { id: 'g-alarm', name: 'Sunrise Alarm Clock', emoji: '⏰', era: 4, cost: 1_800_000_000_000_000, desc: 'Wake the whole world up — sunrise news pays 3× instead of 2×.', effect: { kind: 'sunrise', add: 1 } },
+  { id: 'g-fans', name: 'Fan Mail From Everywhere', emoji: '💌', era: 4, cost: 2_500_000_000_000_000, desc: 'Letters in 100 languages — viewers cheer faster.', effect: { kind: 'mood', x: 1.5 } },
+  { id: 'g-dictionary', name: 'Universal Dictionary', emoji: '📚', era: 4, cost: 4_000_000_000_000_000, desc: 'Translators know EVERY word — 2× faster.', needs: { staff: 'translator', count: 5 }, effect: { kind: 'staff', id: 'translator', x: 2 } },
+  { id: 'g-spy', name: 'Spy Satellite', emoji: '🕵️', era: 4, cost: 7_000_000_000_000_000, desc: 'See secrets from space — more secret words that pay big.', effect: { kind: 'critChance', add: 0.04 } },
+  { id: 'g-nosleep', name: 'Never-Sleeping Newsroom', emoji: '🌐', era: 4, cost: 12_000_000_000_000_000, desc: 'It is always daytime somewhere — helpers earn 12 hours longer while you are away.', effect: { kind: 'offline', hours: 12 } },
+  { id: 'g-solar', name: 'Solar Panels', emoji: '☀️', era: 4, cost: 30_000_000_000_000_000, desc: 'Satellites run on sunshine — Satellite Engineers 2× faster.', needs: { staff: 'satengineer', count: 5 }, effect: { kind: 'staff', id: 'satengineer', x: 2 } },
+  { id: 'g-rival', name: 'Buy Your Competitor', emoji: '🏢', era: 4, cost: 60_000_000_000_000_000, desc: 'You bought the other news channel! ALL helpers earn 2×.', effect: { kind: 'allStaff', x: 2 } },
+  { id: 'g-moon', name: 'Moon Relay Station', emoji: '🌕', era: 4, cost: 120_000_000_000_000_000, desc: "Bounce your signal off the Moon — each word also earns more of your helpers' money.", effect: { kind: 'idleShare', add: 1 } },
+  { id: 'g-coffee', name: 'Endless Coffee Machine', emoji: '☕', era: 4, cost: 180_000_000_000_000_000, desc: 'Night Desk Editors never get tired — 2× faster.', needs: { staff: 'nightdesk', count: 5 }, effect: { kind: 'staff', id: 'nightdesk', x: 2 } },
 ];
 
 // ---------- Legend perks: bought with ⭐ Fame, kept forever (even after selling the company) ----------
@@ -153,6 +172,7 @@ export function upgradeTag(u: UpgradeDef): UpgradeTag {
     case 'staff': case 'allStaff': return 'helpers';
     case 'comboCap': case 'mood': return 'combo';
     case 'critChance': case 'critMult': return 'lucky';
+    case 'sunrise': return 'words';
     case 'backlog': case 'fresh': return 'news';
     case 'offline': return 'away';
   }
@@ -180,6 +200,7 @@ export function computeMods(owned: string[], legend: string[] = [], fameTotal = 
       case 'fresh': m.freshMult += e.add; break;
       case 'offline': m.offlineHours += e.hours; break;
       case 'mood': m.moodGain *= e.x; break;
+      case 'sunrise': m.sunriseMult += e.add; break;
     }
   }
   return m;

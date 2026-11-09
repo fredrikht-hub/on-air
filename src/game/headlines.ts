@@ -98,6 +98,27 @@ const ADS = [
   'Super Glow light bulbs: brighter nights, happier homes.',
   'Get a Jet Toaster. Toast in three seconds, or your money back!',
 ];
+// ---------- Global News: headlines full of numbers ----------
+const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
+const big = () => rnd(2, 99).toLocaleString('en-US') + ',' + String(rnd(0, 9) * 100).padStart(3, '0');
+const pct = () => `${rnd(2, 300)}%`;
+const clock = () => `${rnd(1, 12)}:${String(rnd(0, 11) * 5).padStart(2, '0')}`;
+const AGES_WHO = ['goat', 'grandmother', 'parrot', 'inventor', 'pirate', 'turtle', 'chef', 'wizard'];
+function numberHeadline(): string {
+  switch (rnd(0, 9)) {
+    case 0: return `${big()} ${pick(ANIMALS)} block ${pick(PLACES)}.`;
+    case 1: return `it is ${rnd(-15, 45)} degrees, and ice cream sales are up ${pct()}.`;
+    case 2: return `stocks rise ${pct()} after ${rnd(2, 40)} ${pick(ANIMALS)} buy the bank.`;
+    case 3: return `${pick(SUBJECTS)} ${pick(ACTIONS)} in just ${rnd(3, 59)} seconds.`;
+    case 4: return `the local team wins ${rnd(2, 9)} to ${rnd(0, 1)} after ${rnd(91, 130)} minutes.`;
+    case 5: return `at ${clock()}, ${pick(SUBJECTS)} ${pick(ACTIONS)}.`;
+    case 6: return `${rnd(6, 9)} out of 10 experts say ${pick(CLAIMS)}.`;
+    case 7: return `a ${rnd(7, 109)} year old ${pick(AGES_WHO)} ${pick(ACTIONS)}.`;
+    case 8: return `${big()} people line up for ${pick(THINGS)} at ${clock()}.`;
+    default: return `a ${rnd(2, 40)} meter sandwich feeds ${big()} hungry fans.`;
+  }
+}
+
 export function generateAd(): string {
   return pick(ADS);
 }
@@ -168,6 +189,8 @@ function generateRaw(style: TextStyle): string {
       });
     case 'paper':
       return fresh(() => sentenceCase(baseHeadline()));
+    case 'global':
+      return fresh(() => sentenceCase(numberHeadline()));
     case 'tv':
       return fresh(() => {
         const h = baseHeadline();
@@ -191,6 +214,6 @@ function generateRaw(style: TextStyle): string {
 
 /** apply an era's text style to a hand-written sentence (used for story chapters) */
 export function styleText(style: TextStyle, text: string): string {
-  if (style === 'tv') return sentenceCase(text) + '.';
+  if (style === 'tv' || style === 'global') return sentenceCase(text) + '.';
   return style === 'paper' ? sentenceCase(text) : text;
 }

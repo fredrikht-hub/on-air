@@ -33,6 +33,7 @@ function snapshot(s: GameData) {
     fresh: m.freshMult,
     offline: m.offlineHours,
     mood: m.moodGain,
+    sunrise: m.sunriseMult,
   };
 }
 
@@ -47,6 +48,7 @@ function diffLines(a: ReturnType<typeof snapshot>, b: ReturnType<typeof snapshot
   if (changed(a.backlog, b.backlog)) out.push(`Backlog holds: ${a.backlog} → ${b.backlog} stories`);
   if (changed(a.fresh, b.fresh)) out.push(`Fresh stories: ${mult(a.fresh)} → ${mult(b.fresh)}`);
   if (changed(a.offline, b.offline)) out.push(`Offline earnings: ${a.offline}h → ${b.offline}h`);
+  if (changed(a.sunrise, b.sunrise)) out.push(`Sunrise news: ${mult(a.sunrise)} → ${mult(b.sunrise)}`);
   if (changed(a.mood, b.mood)) out.push(`Mood rises ${mult(b.mood / a.mood)} faster`);
   return out;
 }

@@ -1,5 +1,5 @@
-export type CharacterId = 'mayor' | 'editor' | 'manager' | 'anchor';
-export type TextStyle = 'crier' | 'paper' | 'radio' | 'tv';
+export type CharacterId = 'mayor' | 'editor' | 'manager' | 'anchor' | 'world';
+export type TextStyle = 'crier' | 'paper' | 'radio' | 'tv' | 'global';
 
 export interface Era {
   id: string;
@@ -82,16 +82,19 @@ export const ERAS: Era[] = [
     theme: { accent: '#ff5d73', sky1: '#1d2340', sky2: '#2c3e70', floor: '#14182c' },
   },
   {
-    id: 'cable',
-    name: '24/7 Cable News',
-    emoji: '📡',
+    id: 'global',
+    fonts: { title: "'Orbitron', 'Trebuchet MS', sans-serif", type: "'JetBrains Mono', monospace" },
+    name: 'Global News',
+    emoji: '🛰️',
     year: '1985',
-    wordBase: 0,
-    evolveCost: null,
-    skill: 'Number row — names, dates, 2026',
-    description: 'The news never sleeps, and neither do you.',
-    playable: false,
-    theme: { accent: '#4bd3ff', sky1: '#222', sky2: '#444', floor: '#111' },
+    wordBase: 40_000,
+    evolveCost: 300_000_000_000_000_000,
+    skill: 'Numbers — words with numbers pay double. Chase the sunrise!',
+    description: 'Launch satellites and broadcast to the WHOLE PLANET. News from a city where the sun is rising pays extra.',
+    playable: true,
+    character: { id: 'world', name: 'You', title: 'World News Chief' },
+    textStyle: 'global',
+    theme: { accent: '#4bd3ff', sky1: '#0d1424', sky2: '#14203a', floor: '#0a0f1c' },
   },
   {
     id: 'stream',

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { buySuggestion, onToast, suggest, toast, type Toast } from '../game/buy';
 import { ERAS } from '../game/eras';
-import { AD_MULT, BREAKING_JACKPOT, BREAKING_WORD_MULT, GOLDEN_MULT, PUNCT_MULT, VISITORS, eventGap, hasPunct, pickGolden, planStory } from '../game/events';
+import { AD_MULT, BREAKING_JACKPOT, BREAKING_WORD_MULT, DIGIT_MULT, GOLDEN_MULT, PUNCT_MULT, VISITORS, eventGap, hasDigit, hasPunct, pickGolden, planStory } from '../game/events';
+import { CITY_BY_ID, cityClock, isMorning, secondsToSunrise } from '../game/world';
 import { money, mult } from '../game/format';
 import { confetti, liveFx, sceneEvent } from '../game/fx';
 import { sfx } from '../game/sound';
@@ -27,6 +28,7 @@ interface Engine {
   finished: boolean;
   arc?: ArcRef;
   ad: boolean;
+  city?: string;
   golden: number;
   breaking: Breaking | null;
 }
@@ -35,7 +37,7 @@ interface Popup { id: number; x: number; y: number; text: string; kind: 'normal'
 
 const MAX_PENDING_ERRORS = 6;
 
-function makeEngine(text: string, fresh: boolean, arc?: ArcRef, ad = false): Engine {
+function makeEngine(text: string, fresh: boolean, arc?: ArcRef, ad = false, city?: string): Engine {
   const words: { start: number; end: number }[] = [];
   const charWord: number[] = [];
   let start = 0;
@@ -47,7 +49,7 @@ function makeEngine(text: string, fresh: boolean, arc?: ArcRef, ad = false): Eng
   return {
     text, words, charWord, typed: '', wordErr: words.map(() => false), done: words.map(() => false),
     lock: 0, start: null, keys: 0, correctKeys: 0, fresh, earned: 0, anyError: false, finished: false,
-    arc, ad, golden: ad ? -1 : pickGolden(text), breaking: null,
+    arc, ad, city, golden: ad ? -1 : pickGolden(text), breaking: null,
   };
 }
 
@@ -132,10 +134,11 @@ export function TypingPanel({ paused }: { paused: boolean }) {
   const newStory = useCallback(() => {
     const st = useGame.getState();
     const style = ERAS[st.era].textStyle ?? 'crier';
-    const story = st.takeStory(() => nextPlan.current ?? planStory(style, st.arcs));
+    const story = st.takeStory(() => nextPlan.current ?? planStory(style, st.arcs, st.lifetimeCash));
     // plan the NEXT headline as if this one were already filed (keeps the preview honest)
-    nextPlan.current = planStory(style, advanceArcs(useGame.getState().arcs, story.arc));
-    const en = makeEngine(story.text, story.fresh, story.arc, story.ad);
+    const after = useGame.getState();
+    nextPlan.current = planStory(style, advanceArcs(after.arcs, story.arc), after.lifetimeCash);
+    const en = makeEngine(story.text, story.fresh, story.arc, story.ad, story.city);
     if (en.ad) sfx.commercial();
     if (breakingNext.current && !en.ad) {
       breakingNext.current = false;
@@ -175,7 +178,7 @@ export function TypingPanel({ paused }: { paused: boolean }) {
   useEffect(() => {
     const id = window.setInterval(() => {
       const st = useGame.getState();
-      if (st.era < 3 || pausedRef.current) return;
+      if (st.era !== 3 || pausedRef.current) return;
       const idle = (Date.now() - st.lastKeyAt) / 1000;
       const dead = st.lastKeyAt > 0 && idle > 2 && idle < 15;
       if (dead) {
@@ -351,12 +354,19 @@ export function TypingPanel({ paused }: { paused: boolean }) {
 
     const perfect = !e.wordErr[idx];
     const isGolden = idx === e.golden;
-    const tv = useGame.getState().era >= 3;
-    const punct = tv && perfect && hasPunct(e.text.slice(e.words[idx].start, e.words[idx].end));
+    const eraNow = useGame.getState().era;
+    const tv = eraNow === 3;
+    const wordText = e.text.slice(e.words[idx].start, e.words[idx].end);
+    const punct = tv && perfect && hasPunct(wordText);
+    const digits = eraNow >= 4 && perfect && hasDigit(wordText);
+    const city = e.city ? CITY_BY_ID[e.city] : null;
+    const sunrise = eraNow >= 4 && city != null && isMorning(city, Date.now());
     let extra = 1;
     if (isGolden && perfect) extra *= GOLDEN_MULT;
     if (e.breaking && !e.breaking.failed) extra *= BREAKING_WORD_MULT;
     if (punct) extra *= PUNCT_MULT;
+    if (digits) extra *= DIGIT_MULT;
+    if (sunrise) extra *= mods(useGame.getState()).sunriseMult;
     if (e.ad) extra *= AD_MULT;
     if (tv) setRatings(ratingsRef.current + (!perfect ? -0.08 : punct ? 0.1 : 0.05));
 
@@ -377,7 +387,7 @@ export function TypingPanel({ paused }: { paused: boolean }) {
       spawnPopup('CRIT! +' + money(res.amount), 'crit');
     } else {
       sfx.word(c);
-      spawnPopup((punct ? '✒️ ×2 +' : '+') + money(res.amount));
+      spawnPopup((punct ? '✒️ ×2 +' : digits ? '🔢 ×2 +' : sunrise ? '🌅 +' : '+') + money(res.amount));
     }
     if (res.crit || (isGolden && perfect)) {
       setShake(true);
@@ -489,11 +499,14 @@ export function TypingPanel({ paused }: { paused: boolean }) {
   const now = Date.now();
   const boost = s.boost && now < s.boost.until ? s.boost : null;
   const hot = hotMult(liveWpm, avg);
-  const sigM = meterMult(era, era >= 3 ? ratings : signal);
+  const sigM = meterMult(era, era === 3 ? ratings : signal);
+  const storyCity = era >= 4 && e.city ? CITY_BY_ID[e.city] : null;
+  const sunNow = storyCity != null && isMorning(storyCity, now);
+  const sunIn = storyCity ? Math.ceil(secondsToSunrise(storyCity, now)) : 0;
   const nextCombo = comboMult(combo + 1, m.comboCap);
   const wordValue =
     wordBaseValue(s) * nextCombo * moodMult(mood) * hot * sigM * (e.fresh ? m.freshMult : 1) * (boost ? boost.mult : 1) *
-    (e.breaking && !e.breaking.failed ? BREAKING_WORD_MULT : 1) * (e.ad ? AD_MULT : 1);
+    (e.breaking && !e.breaking.failed ? BREAKING_WORD_MULT : 1) * (e.ad ? AD_MULT : 1) * (sunNow ? m.sunriseMult : 1);
   const fm = firstMismatch(e);
   const currentWord = e.charWord[Math.min(e.typed.length, e.text.length - 1)];
   const firstTime = s.totals.words === 0;
@@ -540,6 +553,7 @@ export function TypingPanel({ paused }: { paused: boolean }) {
           {arc ? (
             <span className="story-tag arc">{arc.emoji} {arc.title} · part {e.arc!.part + 1}/{arc.parts.length}</span>
           ) : null}
+          {storyCity && <span className="story-tag city">📍 {storyCity.name.toUpperCase()} {cityClock(storyCity, now)}</span>}
           {e.ad && <span className="story-tag ad">💰 COMMERCIAL · sponsor pays ×{AD_MULT}</span>}
           <span className={`story-tag ${e.fresh ? 'fresh' : 'filler'}`}>
             {e.ad ? '📺 AD BREAK' : e.fresh ? `🗞️ FRESH ${mult(m.freshMult)}` : '📼 OLD NEWS'}
@@ -606,7 +620,13 @@ export function TypingPanel({ paused }: { paused: boolean }) {
         {moodMult(mood) < 0.95 && <span className="pill cold">😠 Crowd booing {mult(moodMult(mood))}</span>}
         {hot > 1.05 && avg != null && liveWpm != null && <span className="pill hot">⚡ beating your avg {mult(hot)}</span>}
         {era === 2 && <span className={`pill ${signal > 0.75 ? 'hot' : signal < 0.35 ? 'cold' : ''}`}>📶 Signal {mult(sigM)}</span>}
-        {era >= 3 && (
+        {storyCity && (
+          <span className={`pill ${sunNow ? 'hot sunrise' : ''}`} title="News from a city where the sun is rising pays extra">
+            {sunNow ? `🌅 Morning in ${storyCity.name}! ${mult(m.sunriseMult)}` : sunIn <= 45 ? `🌄 Sunrise in ${storyCity.name} in ${sunIn}s` : `🕐 ${cityClock(storyCity, now)} in ${storyCity.name}`}
+          </span>
+        )}
+        {era >= 4 && <span className="pill" title="Words with numbers pay double">🔢 Numbers ×{DIGIT_MULT}</span>}
+        {era === 3 && (
           <span className={`pill ratings ${deadAir ? 'cold dead' : ratings > 0.75 ? 'hot' : ratings < 0.35 ? 'cold' : ''}`} title="Keep talking to keep viewers watching">
             {deadAir ? '📴 DEAD AIR — keep talking!' : `📺 Ratings ${mult(sigM)}`}
             <span className="ratings-bar"><span style={{ width: `${ratings * 100}%` }} /></span>

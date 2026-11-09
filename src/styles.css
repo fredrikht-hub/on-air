@@ -532,3 +532,18 @@ kbd { font-family: var(--mono); background: var(--panel2); border: 1px solid var
 .evolve-btn.armed { background: #ffd84d; color: #1a1020; }
 .row.owned-row { opacity: 0.6; border-color: #ffd84d55; }
 .row.owned-row .row-cost { color: #ffd84d; }
+
+/* ================= v10: Global News ================= */
+.global-scene { background: #0d1424; }
+.world-clocks { position: absolute; z-index: 4; display: flex; flex-direction: column; gap: 3px; padding: 4px 6px; font-family: 'Orbitron', Inter, sans-serif; font-size: 10px; color: #8fb6d8; }
+.clock-row { display: flex; justify-content: space-between; gap: 4px; white-space: nowrap; overflow: hidden; }
+.clock-row b { color: #c8e4ff; font-variant-numeric: tabular-nums; }
+.clock-row.morning, .clock-row.morning b { color: #ffd36e; }
+.clock-row.current { text-decoration: underline; text-decoration-color: #ff5d73; }
+.world-ticker { position: absolute; left: 0; right: 0; z-index: 4; display: flex; align-items: center; overflow: hidden; font-family: Inter, sans-serif; font-weight: 800; font-size: 11px; color: #fff; text-transform: uppercase; }
+.ticker-label { background: #fff; color: #b3122e; padding: 0 8px; height: 100%; display: flex; align-items: center; font-weight: 900; letter-spacing: 1px; flex: none; }
+.ticker-track { flex: 1; overflow: hidden; white-space: pre; }
+.ticker-track > span { display: inline-block; padding-left: 100%; animation: tickerMove 60s linear infinite; }
+@keyframes tickerMove { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+.story-tag.city { background: #4bd3ff22; color: #8fe4ff; border: 1px solid #4bd3ff; font-family: Inter; font-weight: 800; font-size: 12px; }
+.pill.sunrise { border-color: #ffb347; color: #ffd36e; }

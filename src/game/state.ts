@@ -29,7 +29,7 @@ export interface GameData {
   createdAt: number;
   settings: { sound: boolean };
   /** story on screen — saved so reloading doesn't burn backlog */
-  currentStory: { text: string; fresh: boolean; era: number; arc?: ArcRef; ad?: boolean } | null;
+  currentStory: { text: string; fresh: boolean; era: number; arc?: ArcRef; ad?: boolean; city?: string } | null;
   /** UI parts unlocked step by step so new players aren't overwhelmed */
   reveal: { shop: boolean; upgrades: boolean; evolve: boolean };
   introSeen: boolean;
@@ -59,7 +59,7 @@ export interface GameData {
 }
 
 export interface ArcRef { id: string; part: number }
-export interface StoryPlan { text: string; arc?: ArcRef; ad?: boolean }
+export interface StoryPlan { text: string; arc?: ArcRef; ad?: boolean; city?: string }
 export interface Boost { mult: number; until: number; label: string; emoji: string }
 
 export interface OfflineReport {
@@ -78,7 +78,7 @@ interface Actions {
   registerKey(correct: boolean, expected: string): void;
   completeWord(p: { perfect: boolean; liveWpm: number | null; /** the era meter (radio signal / TV ratings), 0–1 */ signal: number; fresh: boolean; extra?: number }): WordResult;
   completeStory(p: { wpm: number; acc: number; perfect: boolean; earned: number; arc?: ArcRef; text?: string }): number;
-  takeStory(generate: () => StoryPlan): { text: string; fresh: boolean; arc?: ArcRef; ad?: boolean };
+  takeStory(generate: () => StoryPlan): { text: string; fresh: boolean; arc?: ArcRef; ad?: boolean; city?: string };
   addCash(amount: number): void;
   setBoost(b: Boost | null): void;
   patch(p: Partial<GameData>): void;
@@ -213,8 +213,8 @@ export function hotMult(liveWpm: number | null, avg: number | null): number {
 }
 export const signalMult = (signal: number) => 0.8 + signal * 0.6;
 export const ratingsMult = (ratings: number) => 0.7 + ratings * 0.8;
-/** each era's special meter: radio = rhythm signal, TV and later = viewer ratings */
-export const meterMult = (era: number, v: number) => (era === 2 ? signalMult(v) : era >= 3 ? ratingsMult(v) : 1);
+/** each era's special meter: radio = rhythm signal, TV = viewer ratings */
+export const meterMult = (era: number, v: number) => (era === 2 ? signalMult(v) : era === 3 ? ratingsMult(v) : 1);
 
 export function wordBaseValue(d: GameData): number {
   const m = mods(d);

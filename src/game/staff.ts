@@ -29,6 +29,11 @@ export const STAFF: StaffDef[] = [
   { id: 'weather', name: 'Weather Forecaster', emoji: '🌦️', era: 3, baseCost: 120_000_000_000, baseRate: 70_000_000, flavor: 'Tells everyone if they need an umbrella.' },
   { id: 'makeup', name: 'Makeup Artist', emoji: '💄', era: 3, baseCost: 900_000_000_000, baseRate: 400_000_000, flavor: 'Makes you look great on camera.' },
   { id: 'producer', name: 'TV Producer', emoji: '📋', era: 3, baseCost: 6_000_000_000_000, baseRate: 2_200_000_000, flavor: 'Runs the whole show from behind the camera.' },
+
+  { id: 'correspondent', name: 'Foreign Correspondent', emoji: '🌍', era: 4, baseCost: 80_000_000_000_000, baseRate: 60_000_000_000, flavor: 'Flies around the world to find stories.' },
+  { id: 'translator', name: 'Translator', emoji: '🗣️', era: 4, baseCost: 600_000_000_000_000, baseRate: 350_000_000_000, flavor: 'Says your news in every language.' },
+  { id: 'satengineer', name: 'Satellite Engineer', emoji: '🛰️', era: 4, baseCost: 4_500_000_000_000_000, baseRate: 2_000_000_000_000, flavor: 'Keeps your satellites flying.' },
+  { id: 'nightdesk', name: 'Night Desk Editor', emoji: '🌙', era: 4, baseCost: 30_000_000_000_000_000, baseRate: 12_000_000_000_000, flavor: 'It is always morning somewhere — she never sleeps.' },
 ];
 
 export const STAFF_BY_ID = Object.fromEntries(STAFF.map((s) => [s.id, s])) as Record<string, StaffDef>;

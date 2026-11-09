@@ -87,6 +87,13 @@ const ACCESSORY: Record<CharacterId, Px[]> = {
     ...span(2, 5, 12, 'n'), ...span(3, 3, 13, 'n'), [4, 3, 'n'], [4, 12, 'n'], [5, 2, 'n'], [5, 13, 'n'],
     [14, 6, 'w'], [14, 9, 'w'],
   ],
+  world: [
+    // short hair + a headset with a little microphone
+    ...span(2, 5, 11, 'n'), ...span(3, 3, 12, 'n'), [4, 3, 'n'], [4, 12, 'n'],
+    ...span(1, 4, 11, 'h'), [2, 3, 'h'], [2, 12, 'h'], [3, 2, 'h'], [3, 13, 'h'], [4, 1, 'h'], [4, 14, 'h'],
+    ...span(5, 1, 2, 'P'), ...span(6, 1, 2, 'P'), ...span(7, 1, 2, 'P'), ...span(5, 13, 14, 'P'), ...span(6, 13, 14, 'P'), ...span(7, 13, 14, 'P'),
+    [8, 2, 'h'], [9, 3, 'h'], [10, 4, 'h'], [10, 5, 'u'],
+  ],
   manager: [
     ...span(2, 4, 11, 'p'), [3, 3, 'p'], [3, 12, 'p'], [4, 2, 'p'], [4, 13, 'p'], [5, 1, 'p'], [5, 14, 'p'], [6, 1, 'p'], [6, 14, 'p'],
     ...span(7, 0, 2, 'P'), ...span(8, 0, 2, 'P'), ...span(9, 0, 2, 'P'), ...span(10, 0, 2, 'P'),
@@ -103,6 +110,7 @@ const CHAR_PAL: Record<CharacterId, Palette> = {
   editor: { n: '#6b4a2e', c: '#e8e4d8', t: '#c0392b' },
   manager: { n: '#26222e', c: '#3b3f6b', t: '#b48cff' },
   anchor: { n: '#3a2418', c: '#1f2a44', t: '#d6334a' },
+  world: { n: '#1a1a1a', c: '#26303f', t: '#4bd3ff', P: '#2a2a3a' },
 };
 
 export function characterSprite(id: CharacterId, mood: Mood): { rows: string[]; palette: Palette } {
