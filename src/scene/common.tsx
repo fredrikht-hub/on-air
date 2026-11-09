@@ -237,12 +237,12 @@ export function useCoins(xFrom = 4, xSpan = 20) {
   return coins;
 }
 
-export function reactionText(mood: Mood, who: 'crowd' | 'readers' | 'listeners'): string {
+export function reactionText(mood: Mood, who: 'crowd' | 'readers' | 'listeners' | 'viewers'): string {
   const one = who === 'crowd';
   switch (mood) {
     case 'ecstatic': return `🤩 The ${who} ${one ? 'LOVES' : 'LOVE'} you!`;
     case 'happy': return `😄 The ${who} ${one ? 'is' : 'are'} cheering`;
-    case 'neutral': return `🙂 The ${who} ${one ? 'is' : 'are'} ${who === 'readers' ? 'reading' : 'listening'}`;
+    case 'neutral': return `🙂 The ${who} ${one ? 'is' : 'are'} ${who === 'readers' ? 'reading' : who === 'viewers' ? 'watching' : 'listening'}`;
     case 'worried': return `😕 The ${who} ${one ? 'is' : 'are'} getting bored…`;
     case 'angry': return '😠 Booo! Fix your typos!';
   }

@@ -24,6 +24,11 @@ export const STAFF: StaffDef[] = [
   { id: 'dj', name: 'Radio DJ', emoji: '🎧', era: 2, baseCost: 30_000_000, baseRate: 70_000, flavor: "Plays music between your news." },
   { id: 'engineer', name: 'Sound Engineer', emoji: '🎛️', era: 2, baseCost: 250_000_000, baseRate: 400_000, flavor: "Keeps the radio sounding perfect." },
   { id: 'field', name: 'Field Reporter', emoji: '🎙️', era: 2, baseCost: 2_000_000_000, baseRate: 2_200_000, flavor: "Reports live from everywhere." },
+
+  { id: 'camera', name: 'Camera Operator', emoji: '🎥', era: 3, baseCost: 15_000_000_000, baseRate: 12_000_000, flavor: 'Points the big camera at you.' },
+  { id: 'weather', name: 'Weather Forecaster', emoji: '🌦️', era: 3, baseCost: 120_000_000_000, baseRate: 70_000_000, flavor: 'Tells everyone if they need an umbrella.' },
+  { id: 'makeup', name: 'Makeup Artist', emoji: '💄', era: 3, baseCost: 900_000_000_000, baseRate: 400_000_000, flavor: 'Makes you look great on camera.' },
+  { id: 'producer', name: 'TV Producer', emoji: '📋', era: 3, baseCost: 6_000_000_000_000, baseRate: 2_200_000_000, flavor: 'Runs the whole show from behind the camera.' },
 ];
 
 export const STAFF_BY_ID = Object.fromEntries(STAFF.map((s) => [s.id, s])) as Record<string, StaffDef>;

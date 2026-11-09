@@ -1,5 +1,5 @@
-export type CharacterId = 'mayor' | 'editor' | 'manager';
-export type TextStyle = 'crier' | 'paper' | 'radio';
+export type CharacterId = 'mayor' | 'editor' | 'manager' | 'anchor';
+export type TextStyle = 'crier' | 'paper' | 'radio' | 'tv';
 
 export interface Era {
   id: string;
@@ -68,15 +68,18 @@ export const ERAS: Era[] = [
   },
   {
     id: 'tv',
-    name: 'Television',
+    fonts: { title: "'Righteous', 'Trebuchet MS', sans-serif", type: "'JetBrains Mono', monospace" },
+    name: 'TV Station',
     emoji: '📺',
     year: '1955',
     wordBase: 5_000,
-    evolveCost: null,
-    skill: 'Punctuation — sentences, commas, periods.',
-    description: 'Live captions for the evening news. Meet your first anchor.',
-    playable: false,
-    theme: { accent: '#ff5d73', sky1: '#222', sky2: '#444', floor: '#111' },
+    evolveCost: 100_000_000_000_000,
+    skill: 'Punctuation — commas and periods pay double. Never stop talking!',
+    description: 'Read the news on TV — now everybody can SEE you! Keep talking: silence makes viewers switch channels.',
+    playable: true,
+    character: { id: 'anchor', name: 'You', title: 'TV News Anchor' },
+    textStyle: 'tv',
+    theme: { accent: '#ff5d73', sky1: '#1d2340', sky2: '#2c3e70', floor: '#14182c' },
   },
   {
     id: 'cable',

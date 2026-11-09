@@ -76,6 +76,32 @@ const RADIO_INTROS = [
 
 const CONNECTORS = ['and in other news', 'meanwhile', 'elsewhere tonight', 'also today', 'after the break'];
 
+const TV_OPENERS = ['Good evening.', 'Hello, America.', 'Welcome back.', 'Here is the news.', 'Good evening, everyone.'];
+const TV_LEADS = ['Tonight,', 'This just in:', 'In other news,', 'Meanwhile,', 'Believe it or not,', 'Right now,', 'Earlier today,'];
+const TV_REACTIONS = [
+  'nobody knows why', 'the whole town is cheering', 'experts are very confused', 'the police are not amused',
+  'children are thrilled', 'we will keep you posted', 'the mayor has no comment', 'witnesses are still laughing',
+];
+const TV_QUESTIONS = ['Is it true?', 'Can you believe it?', 'What happens next?', 'Who saw that coming?'];
+const TV_SIGNOFFS = ['Stay tuned!', 'Back after the break.', 'More at eleven.', 'Good night, and good luck.', 'Do not touch that dial!'];
+
+/** TV sponsor messages ("commercials") — they pay extra */
+const ADS = [
+  'Drink Fizzo Cola. It tastes like a sunny Tuesday!',
+  'New Sparkle Soap: your dishes will shine, and so will you.',
+  'Buy a Rocket Vacuum. It eats dust, crumbs, and socks!',
+  'Crunchy Flakes, the breakfast of champions. Now with more crunch!',
+  'Visit Big Bob’s Cars. Low prices, shiny wheels, free balloons!',
+  'Minty Fresh toothpaste: smile, and the world smiles back.',
+  'Cozy Socks keep your toes warm, even on Mondays.',
+  'Try Golden Pancake Syrup. Pour it on, then pour some more!',
+  'Super Glow light bulbs: brighter nights, happier homes.',
+  'Get a Jet Toaster. Toast in three seconds, or your money back!',
+];
+export function generateAd(): string {
+  return pick(ADS);
+}
+
 const pick = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 
 let lastTemplate = -1;
@@ -142,6 +168,17 @@ function generateRaw(style: TextStyle): string {
       });
     case 'paper':
       return fresh(() => sentenceCase(baseHeadline()));
+    case 'tv':
+      return fresh(() => {
+        const h = baseHeadline();
+        const r = Math.random();
+        if (r < 0.2) return `${pick(TV_OPENERS)} ${sentenceCase(h)}.`;
+        if (r < 0.4) return `${pick(TV_LEADS)} ${h}.`;
+        if (r < 0.55) return `${sentenceCase(h)}, and ${pick(TV_REACTIONS)}.`;
+        if (r < 0.7) return `${pick(TV_QUESTIONS)} ${sentenceCase(h)}!`;
+        if (r < 0.82) return `${sentenceCase(h)}. ${pick(TV_SIGNOFFS)}`;
+        return `Weather: ${pick(WEATHER)}, then ${pick(WEATHER)}.`;
+      });
     case 'radio':
       return fresh(() => {
         const r = Math.random();
@@ -154,5 +191,6 @@ function generateRaw(style: TextStyle): string {
 
 /** apply an era's text style to a hand-written sentence (used for story chapters) */
 export function styleText(style: TextStyle, text: string): string {
+  if (style === 'tv') return sentenceCase(text) + '.';
   return style === 'paper' ? sentenceCase(text) : text;
 }

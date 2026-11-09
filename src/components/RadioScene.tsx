@@ -467,14 +467,14 @@ export function RadioScene() {
       {goalCost != null && (
         <div className={`goal ${s.cash >= goalCost ? 'ready' : ''}`}>
           <span className="goal-text">
-            🎯 <b>Goal:</b> save {money(goalCost)} to build a <b>TV studio</b> 📺 <small>(coming soon)</small>
+            🎯 <b>Goal:</b> save {money(goalCost)} to build a <b>TV studio</b> 📺
           </span>
           <span className="goal-bar"><span style={{ width: `${radio.buildPct * 100}%` }} /></span>
         </div>
       )}
       {goalCost != null && (
         <div className={`site-label ${radio.build >= 5 ? 'ready' : ''}`} style={{ left: (W - 27) * scale, top: (GROUND + 1) * scale, width: 26 * scale }}>
-          {radio.build >= 5 ? '📺 Soon!' : `🏗️ ${Math.floor(radio.buildPct * 100)}%`}
+          {radio.build >= 5 ? '📺 Ready!' : `🏗️ ${Math.floor(radio.buildPct * 100)}%`}
         </div>
       )}
 

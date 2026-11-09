@@ -22,4 +22,4 @@ export function sceneEvent(e: SceneEvent) {
 }
 
 /** live values the scenes can read every frame without re-rendering React */
-export const liveFx = { signal: 0.7 };
+export const liveFx = { signal: 0.7, ratings: 0.6, deadAir: false };

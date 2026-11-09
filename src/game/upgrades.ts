@@ -91,6 +91,21 @@ export const UPGRADES: UpgradeDef[] = [
   { id: 'syndication', name: 'Bigger Antenna', emoji: '📡', era: 2, cost: 2_000_000_000, desc: 'The whole country can listen — ALL helpers earn 2×.', effect: { kind: 'allStaff', x: 2 } },
   { id: 'truck', name: 'Remote Truck', emoji: '🚚', era: 2, cost: 5_000_000_000, desc: 'Field Reporters drive to every story twice as fast.', needs: { staff: 'field', count: 5 }, effect: { kind: 'staff', id: 'field', x: 2 } },
   { id: 'prime', name: 'Radio Tower', emoji: '🗼', era: 2, cost: 10_000_000_000, desc: "Your signal reaches every home — each word also earns more of your helpers' money.", effect: { kind: 'idleShare', add: 1 } },
+
+  // --- TV ---
+  { id: 'tv-color', name: 'Color Cameras', emoji: '🌈', era: 3, cost: 12_000_000_000, desc: 'No more black and white — everyone wants to watch you in color!', effect: { kind: 'wordMult', x: 3 } },
+  { id: 'tv-prompter', name: 'Teleprompter', emoji: '📜', era: 3, cost: 30_000_000_000, desc: 'Read the news right off a screen — keep your combo going longer.', effect: { kind: 'comboCap', add: 0.5 } },
+  { id: 'tv-tripod', name: 'Rolling Tripods', emoji: '🎥', era: 3, cost: 50_000_000_000, desc: 'Camera Operators film twice as much.', needs: { staff: 'camera', count: 5 }, effect: { kind: 'staff', id: 'camera', x: 2 } },
+  { id: 'tv-heli', name: 'News Helicopter', emoji: '🚁', era: 3, cost: 100_000_000_000, desc: 'Fly over every story — lots more news piles up for you.', effect: { kind: 'backlog', cap: 25, rateX: 2 } },
+  { id: 'tv-hidden', name: 'Hidden Camera', emoji: '🕶️', era: 3, cost: 250_000_000_000, desc: 'Catch secrets on film — more secret words that pay big.', effect: { kind: 'critChance', add: 0.04 } },
+  { id: 'tv-radar', name: 'Weather Radar', emoji: '🌀', era: 3, cost: 400_000_000_000, desc: 'Weather Forecasters are right twice as often.', needs: { staff: 'weather', count: 5 }, effect: { kind: 'staff', id: 'weather', x: 2 } },
+  { id: 'tv-prime', name: 'Prime Time Slot', emoji: '🕗', era: 3, cost: 600_000_000_000, desc: 'Your show at 8 o’clock — viewers start cheering faster.', effect: { kind: 'mood', x: 1.5 } },
+  { id: 'tv-interview', name: 'Exclusive Interview', emoji: '🎤', era: 3, cost: 1_500_000_000_000, desc: 'Big stars only talk to you — secret words pay even more.', effect: { kind: 'critMult', add: 3 } },
+  { id: 'tv-allnight', name: '24-Hour Studio', emoji: '🌙', era: 3, cost: 2_000_000_000_000, desc: 'The studio never closes — helpers earn longer while you sleep.', effect: { kind: 'offline', hours: 8 } },
+  { id: 'tv-hairspray', name: 'Super Hairspray', emoji: '💇', era: 3, cost: 3_000_000_000_000, desc: 'Makeup Artists work twice as fast. Not one hair moves!', needs: { staff: 'makeup', count: 5 }, effect: { kind: 'staff', id: 'makeup', x: 2 } },
+  { id: 'tv-satellite', name: 'Satellite Dish', emoji: '📡', era: 3, cost: 8_000_000_000_000, desc: 'Beam your show across the ocean — ALL helpers earn 2×.', effect: { kind: 'allStaff', x: 2 } },
+  { id: 'tv-budget', name: 'Big Budget', emoji: '💼', era: 3, cost: 20_000_000_000_000, desc: 'TV Producers make twice the shows.', needs: { staff: 'producer', count: 5 }, effect: { kind: 'staff', id: 'producer', x: 2 } },
+  { id: 'tv-famous', name: 'Famous Face', emoji: '😎', era: 3, cost: 35_000_000_000_000, desc: "Everybody knows your face — each word also earns more of your helpers' money.", effect: { kind: 'idleShare', add: 1 } },
 ];
 
 /** upgrade category -> small colored dot in the shop */

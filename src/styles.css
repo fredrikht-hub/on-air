@@ -504,3 +504,19 @@ kbd { font-family: var(--mono); background: var(--panel2); border: 1px solid var
 }
 .onair-light.on { background: #e8243c; color: #fff; box-shadow: 0 0 14px #ff3355, 0 0 4px #fff inset; }
 .goal-text small { color: var(--muted); font-weight: 600; }
+
+/* ================= v8: TV era ================= */
+.tv-scene { background: #1d2340; }
+.station-sign.tv { font-family: 'Righteous', 'Trebuchet MS', sans-serif; letter-spacing: 4px; color: #ffe9ee; text-shadow: 0 0 6px #ff5d73, 0 1px 0 #000; }
+.onair-light.live.on { animation: livePulse 1.2s infinite; }
+@keyframes livePulse { 0%, 100% { box-shadow: 0 0 14px #ff3355, 0 0 4px #fff inset; } 50% { box-shadow: 0 0 4px #ff3355, 0 0 2px #fff inset; } }
+.story-tag.ad { background: #ffd84d22; color: #ffd84d; border: 1px solid #ffd84d; font-family: Inter; font-weight: 800; font-size: 12px; }
+.pill.ratings { display: inline-flex; align-items: center; gap: 6px; }
+.ratings-bar { display: inline-block; width: 44px; height: 5px; border-radius: 3px; background: #ffffff22; overflow: hidden; }
+.ratings-bar > span { display: block; height: 100%; background: currentColor; transition: width 0.25s; }
+.pill.dead { animation: deadBlink 0.6s steps(2) infinite; }
+@keyframes deadBlink { 50% { opacity: 0.55; } }
+.dead-air {
+  position: absolute; z-index: 6; font-family: Inter, sans-serif; font-weight: 900; font-size: 12px; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 4px; background: #111a; color: #fff; border: 1px solid #fff6; animation: deadBlink 0.6s steps(2) infinite;
+}

@@ -82,6 +82,11 @@ const ACCESSORY: Record<CharacterId, Px[]> = {
     ...span(7, 4, 6, 'o'), ...span(9, 4, 6, 'o'), [8, 4, 'o'], [8, 6, 'o'],
     ...span(7, 9, 11, 'o'), ...span(9, 9, 11, 'o'), [8, 9, 'o'], [8, 11, 'o'], [8, 7, 'o'], [8, 8, 'o'],
   ],
+  anchor: [
+    // neat side-parted hair + white collar around the tie
+    ...span(2, 5, 12, 'n'), ...span(3, 3, 13, 'n'), [4, 3, 'n'], [4, 12, 'n'], [5, 2, 'n'], [5, 13, 'n'],
+    [14, 6, 'w'], [14, 9, 'w'],
+  ],
   manager: [
     ...span(2, 4, 11, 'p'), [3, 3, 'p'], [3, 12, 'p'], [4, 2, 'p'], [4, 13, 'p'], [5, 1, 'p'], [5, 14, 'p'], [6, 1, 'p'], [6, 14, 'p'],
     ...span(7, 0, 2, 'P'), ...span(8, 0, 2, 'P'), ...span(9, 0, 2, 'P'), ...span(10, 0, 2, 'P'),
@@ -97,6 +102,7 @@ const CHAR_PAL: Record<CharacterId, Palette> = {
   mayor: { n: '#a9aab4', c: '#7a2f3f', t: '#f2b84b' },
   editor: { n: '#6b4a2e', c: '#e8e4d8', t: '#c0392b' },
   manager: { n: '#26222e', c: '#3b3f6b', t: '#b48cff' },
+  anchor: { n: '#3a2418', c: '#1f2a44', t: '#d6334a' },
 };
 
 export function characterSprite(id: CharacterId, mood: Mood): { rows: string[]; palette: Palette } {

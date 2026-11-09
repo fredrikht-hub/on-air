@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { buySuggestion, onToast, suggest, toast, type Toast } from '../game/buy';
 import { ERAS } from '../game/eras';
-import { BREAKING_JACKPOT, BREAKING_WORD_MULT, GOLDEN_MULT, VISITORS, eventGap, pickGolden, planStory } from '../game/events';
+import { AD_MULT, BREAKING_JACKPOT, BREAKING_WORD_MULT, GOLDEN_MULT, PUNCT_MULT, VISITORS, eventGap, hasPunct, pickGolden, planStory } from '../game/events';
 import { money, mult } from '../game/format';
 import { confetti, liveFx, sceneEvent } from '../game/fx';
 import { sfx } from '../game/sound';
-import { comboMult, hotMult, idleRate, moodMult, mods, recentAvgWpm, signalMult, useGame, wordBaseValue, type ArcRef, type StoryPlan } from '../game/state';
+import { comboMult, hotMult, idleRate, meterMult, moodMult, mods, recentAvgWpm, useGame, wordBaseValue, type ArcRef, type StoryPlan } from '../game/state';
 import { ARC_BY_ID, advanceArcs } from '../game/stories';
 
 interface Breaking { limit: number; startedAt: number; failed: boolean }
@@ -26,6 +26,7 @@ interface Engine {
   anyError: boolean;
   finished: boolean;
   arc?: ArcRef;
+  ad: boolean;
   golden: number;
   breaking: Breaking | null;
 }
@@ -34,7 +35,7 @@ interface Popup { id: number; x: number; y: number; text: string; kind: 'normal'
 
 const MAX_PENDING_ERRORS = 6;
 
-function makeEngine(text: string, fresh: boolean, arc?: ArcRef): Engine {
+function makeEngine(text: string, fresh: boolean, arc?: ArcRef, ad = false): Engine {
   const words: { start: number; end: number }[] = [];
   const charWord: number[] = [];
   let start = 0;
@@ -46,7 +47,7 @@ function makeEngine(text: string, fresh: boolean, arc?: ArcRef): Engine {
   return {
     text, words, charWord, typed: '', wordErr: words.map(() => false), done: words.map(() => false),
     lock: 0, start: null, keys: 0, correctKeys: 0, fresh, earned: 0, anyError: false, finished: false,
-    arc, golden: pickGolden(text), breaking: null,
+    arc, ad, golden: ad ? -1 : pickGolden(text), breaking: null,
   };
 }
 
@@ -92,6 +93,16 @@ export function TypingPanel({ paused }: { paused: boolean }) {
   const [liveWpm, setLiveWpm] = useState<number | null>(null);
   const [rollingWpm, setRollingWpm] = useState<number | null>(null);
   const [signal, setSignal] = useState(0.7);
+  // TV: viewer ratings — talking keeps them up, silence ("dead air") makes viewers switch channels
+  const [ratings, setRatingsState] = useState(liveFx.ratings);
+  const [deadAir, setDeadAir] = useState(false);
+  const ratingsRef = useRef(liveFx.ratings);
+  const setRatings = (v: number) => {
+    const r = Math.max(0, Math.min(1, v));
+    ratingsRef.current = r;
+    liveFx.ratings = r;
+    setRatingsState(r);
+  };
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const caretRef = useRef<HTMLDivElement>(null);
@@ -124,8 +135,9 @@ export function TypingPanel({ paused }: { paused: boolean }) {
     const story = st.takeStory(() => nextPlan.current ?? planStory(style, st.arcs));
     // plan the NEXT headline as if this one were already filed (keeps the preview honest)
     nextPlan.current = planStory(style, advanceArcs(useGame.getState().arcs, story.arc));
-    const en = makeEngine(story.text, story.fresh, story.arc);
-    if (breakingNext.current) {
+    const en = makeEngine(story.text, story.fresh, story.arc, story.ad);
+    if (en.ad) sfx.commercial();
+    if (breakingNext.current && !en.ad) {
       breakingNext.current = false;
       const speed = Math.max(25, recentAvgWpm(useGame.getState()) ?? 30);
       const ms = (story.text.length / 5 / speed) * 60000 * 1.25 + 1500;
@@ -158,6 +170,43 @@ export function TypingPanel({ paused }: { paused: boolean }) {
     }, 100);
     return () => window.clearInterval(id);
   }, []);
+
+  // dead air: a pause mid-show drops the ratings (a longer break freezes them — that's just a coffee break)
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const st = useGame.getState();
+      if (st.era < 3 || pausedRef.current) return;
+      const idle = (Date.now() - st.lastKeyAt) / 1000;
+      const dead = st.lastKeyAt > 0 && idle > 2 && idle < 15;
+      if (dead) {
+        if (!liveFx.deadAir) sfx.static();
+        setRatings(ratingsRef.current - 0.04);
+      }
+      if (dead !== liveFx.deadAir) {
+        liveFx.deadAir = dead;
+        setDeadAir(dead);
+      }
+    }, 250);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // first time on TV: explain the new rules once
+  useEffect(() => {
+    if (era < 3) return;
+    const st = useGame.getState();
+    if (st.townSeen.includes('tv-intro')) return;
+    st.patch({ townSeen: [...st.townSeen, 'tv-intro'] });
+    window.setTimeout(
+      () =>
+        toast({
+          emoji: '📺',
+          title: "You're on TV!",
+          lines: ['Words with , . ! ? pay ×2', "Don't stop talking — silence drops your ratings"],
+          big: true,
+        }),
+      3600,
+    );
+  }, [era]);
 
   const spawnPopup = (text: string, kind: Popup['kind'] = 'normal') => {
     const id = ++popupId;
@@ -292,11 +341,16 @@ export function TypingPanel({ paused }: { paused: boolean }) {
 
     const perfect = !e.wordErr[idx];
     const isGolden = idx === e.golden;
+    const tv = useGame.getState().era >= 3;
+    const punct = tv && perfect && hasPunct(e.text.slice(e.words[idx].start, e.words[idx].end));
     let extra = 1;
     if (isGolden && perfect) extra *= GOLDEN_MULT;
     if (e.breaking && !e.breaking.failed) extra *= BREAKING_WORD_MULT;
+    if (punct) extra *= PUNCT_MULT;
+    if (e.ad) extra *= AD_MULT;
+    if (tv) setRatings(ratingsRef.current + (!perfect ? -0.08 : punct ? 0.1 : 0.05));
 
-    const res = useGame.getState().completeWord({ perfect, liveWpm: live, signal: sig, fresh: e.fresh, extra });
+    const res = useGame.getState().completeWord({ perfect, liveWpm: live, signal: tv ? ratingsRef.current : sig, fresh: e.fresh, extra });
     e.earned += res.amount;
     wordsToEvent.current--;
     const c = useGame.getState().combo;
@@ -313,7 +367,7 @@ export function TypingPanel({ paused }: { paused: boolean }) {
       spawnPopup('CRIT! +' + money(res.amount), 'crit');
     } else {
       sfx.word(c);
-      spawnPopup('+' + money(res.amount));
+      spawnPopup((punct ? '✒️ ×2 +' : '+') + money(res.amount));
     }
     if (res.crit || (isGolden && perfect)) {
       setShake(true);
@@ -425,11 +479,11 @@ export function TypingPanel({ paused }: { paused: boolean }) {
   const now = Date.now();
   const boost = s.boost && now < s.boost.until ? s.boost : null;
   const hot = hotMult(liveWpm, avg);
-  const sigM = era >= 2 ? signalMult(signal) : 1;
+  const sigM = meterMult(era, era >= 3 ? ratings : signal);
   const nextCombo = comboMult(combo + 1, m.comboCap);
   const wordValue =
     wordBaseValue(s) * nextCombo * moodMult(mood) * hot * sigM * (e.fresh ? m.freshMult : 1) * (boost ? boost.mult : 1) *
-    (e.breaking && !e.breaking.failed ? BREAKING_WORD_MULT : 1);
+    (e.breaking && !e.breaking.failed ? BREAKING_WORD_MULT : 1) * (e.ad ? AD_MULT : 1);
   const fm = firstMismatch(e);
   const currentWord = e.charWord[Math.min(e.typed.length, e.text.length - 1)];
   const firstTime = s.totals.words === 0;
@@ -476,8 +530,9 @@ export function TypingPanel({ paused }: { paused: boolean }) {
           {arc ? (
             <span className="story-tag arc">{arc.emoji} {arc.title} · part {e.arc!.part + 1}/{arc.parts.length}</span>
           ) : null}
+          {e.ad && <span className="story-tag ad">💰 COMMERCIAL · sponsor pays ×{AD_MULT}</span>}
           <span className={`story-tag ${e.fresh ? 'fresh' : 'filler'}`}>
-            {e.fresh ? `🗞️ FRESH ${mult(m.freshMult)}` : '📼 OLD NEWS'}
+            {e.ad ? '📺 AD BREAK' : e.fresh ? `🗞️ FRESH ${mult(m.freshMult)}` : '📼 OLD NEWS'}
             {s.reveal.shop && <small>{backlogLeft > 0 ? ` · ${backlogLeft} waiting` : ' · none waiting'}</small>}
           </span>
         </span>
@@ -540,7 +595,13 @@ export function TypingPanel({ paused }: { paused: boolean }) {
         {moodMult(mood) >= 1.25 && <span className="pill hot">😄 Crowd cheering {mult(moodMult(mood))}</span>}
         {moodMult(mood) < 0.95 && <span className="pill cold">😠 Crowd booing {mult(moodMult(mood))}</span>}
         {hot > 1.05 && avg != null && liveWpm != null && <span className="pill hot">⚡ beating your avg {mult(hot)}</span>}
-        {era >= 2 && <span className={`pill ${signal > 0.75 ? 'hot' : signal < 0.35 ? 'cold' : ''}`}>📶 Signal {mult(sigM)}</span>}
+        {era === 2 && <span className={`pill ${signal > 0.75 ? 'hot' : signal < 0.35 ? 'cold' : ''}`}>📶 Signal {mult(sigM)}</span>}
+        {era >= 3 && (
+          <span className={`pill ratings ${deadAir ? 'cold dead' : ratings > 0.75 ? 'hot' : ratings < 0.35 ? 'cold' : ''}`} title="Keep talking to keep viewers watching">
+            {deadAir ? '📴 DEAD AIR — keep talking!' : `📺 Ratings ${mult(sigM)}`}
+            <span className="ratings-bar"><span style={{ width: `${ratings * 100}%` }} /></span>
+          </span>
+        )}
       </div>
 
       {sg && (

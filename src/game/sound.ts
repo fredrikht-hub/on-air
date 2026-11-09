@@ -72,5 +72,7 @@ export const sfx = {
   jackpot: () => [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.25, 'square', 0.06, i * 0.07)),
   fail: () => [392, 330, 262].forEach((f, i) => tone(f, 0.25, 'triangle', 0.08, i * 0.15)),
   fanfare: () => [523, 523, 784, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, 'square', 0.06, i * 0.12)),
+  static: () => { for (let i = 0; i < 6; i++) setTimeout(() => click(0.12), i * 25); },
+  commercial: () => [784, 659, 523, 659, 784].forEach((f, i) => tone(f, 0.12, 'sine', 0.07, i * 0.09)),
   record: () => [659, 784, 988, 1319, 1568, 1976].forEach((f, i) => tone(f, 0.3, 'triangle', 0.09, i * 0.08)),
 };

@@ -29,7 +29,7 @@ export interface GameData {
   createdAt: number;
   settings: { sound: boolean };
   /** story on screen — saved so reloading doesn't burn backlog */
-  currentStory: { text: string; fresh: boolean; era: number; arc?: ArcRef } | null;
+  currentStory: { text: string; fresh: boolean; era: number; arc?: ArcRef; ad?: boolean } | null;
   /** UI parts unlocked step by step so new players aren't overwhelmed */
   reveal: { shop: boolean; upgrades: boolean; evolve: boolean };
   introSeen: boolean;
@@ -46,7 +46,7 @@ export interface GameData {
 }
 
 export interface ArcRef { id: string; part: number }
-export interface StoryPlan { text: string; arc?: ArcRef }
+export interface StoryPlan { text: string; arc?: ArcRef; ad?: boolean }
 export interface Boost { mult: number; until: number; label: string; emoji: string }
 
 export interface OfflineReport {
@@ -63,9 +63,9 @@ export interface WordResult {
 interface Actions {
   tick(dt: number): void;
   registerKey(correct: boolean, expected: string): void;
-  completeWord(p: { perfect: boolean; liveWpm: number | null; signal: number; fresh: boolean; extra?: number }): WordResult;
+  completeWord(p: { perfect: boolean; liveWpm: number | null; /** the era meter (radio signal / TV ratings), 0–1 */ signal: number; fresh: boolean; extra?: number }): WordResult;
   completeStory(p: { wpm: number; acc: number; perfect: boolean; earned: number; arc?: ArcRef; text?: string }): number;
-  takeStory(generate: () => StoryPlan): { text: string; fresh: boolean; arc?: ArcRef };
+  takeStory(generate: () => StoryPlan): { text: string; fresh: boolean; arc?: ArcRef; ad?: boolean };
   addCash(amount: number): void;
   setBoost(b: Boost | null): void;
   patch(p: Partial<GameData>): void;
@@ -184,6 +184,9 @@ export function hotMult(liveWpm: number | null, avg: number | null): number {
   return Math.min(2, Math.max(1, 1 + (ratio - 1) * 4));
 }
 export const signalMult = (signal: number) => 0.8 + signal * 0.6;
+export const ratingsMult = (ratings: number) => 0.7 + ratings * 0.8;
+/** each era's special meter: radio = rhythm signal, TV and later = viewer ratings */
+export const meterMult = (era: number, v: number) => (era === 2 ? signalMult(v) : era >= 3 ? ratingsMult(v) : 1);
 
 export function wordBaseValue(d: GameData): number {
   const m = mods(d);
@@ -286,7 +289,7 @@ export const useGame = create<Store>()((set, get) => ({
       moodMult(s.mood) *
       hotMult(liveWpm, recentAvgWpm(s)) *
       (fresh ? m.freshMult : 1) *
-      (s.era >= 2 ? signalMult(signal) : 1);
+      meterMult(s.era, signal);
     if (crit) amount *= m.critMult;
     amount *= extra;
     if (s.boost && Date.now() < s.boost.until) amount *= s.boost.mult;
@@ -323,8 +326,9 @@ export const useGame = create<Store>()((set, get) => ({
   takeStory(generate) {
     const s = get();
     if (s.currentStory && s.currentStory.era === s.era) return s.currentStory;
-    const fresh = s.backlog >= 1;
-    const story = { ...generate(), fresh, era: s.era };
+    const plan = generate();
+    const fresh = !plan.ad && s.backlog >= 1; // commercials don't use up news
+    const story = { ...plan, fresh, era: s.era };
     set({ backlog: fresh ? s.backlog - 1 : s.backlog, currentStory: story });
     return story;
   },

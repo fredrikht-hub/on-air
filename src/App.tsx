@@ -7,6 +7,7 @@ import { TypingPanel } from './components/TypingPanel';
 import { TownScene } from './components/TownScene';
 import { NewspaperScene } from './components/NewspaperScene';
 import { RadioScene } from './components/RadioScene';
+import { TVScene } from './components/TVScene';
 import { ERAS } from './game/eras';
 import { duration, fmt, money } from './game/format';
 import { mods, recentAvgWpm, skillFactor, useGame } from './game/state';
@@ -107,7 +108,7 @@ export function App() {
 
       <main className="main">
         <section className="left">
-          {s.era === 0 ? <TownScene /> : s.era === 1 ? <NewspaperScene /> : <RadioScene />}
+          {s.era === 0 ? <TownScene /> : s.era === 1 ? <NewspaperScene /> : s.era === 2 ? <RadioScene /> : <TVScene />}
           <TypingPanel paused={paused} />
         </section>
         {s.reveal.shop && <Shop />}
