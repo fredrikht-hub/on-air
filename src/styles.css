@@ -520,3 +520,15 @@ kbd { font-family: var(--mono); background: var(--panel2); border: 1px solid var
   position: absolute; z-index: 6; font-family: Inter, sans-serif; font-weight: 900; font-size: 12px; letter-spacing: 1px;
   padding: 3px 8px; border-radius: 4px; background: #111a; color: #fff; border: 1px solid #fff6; animation: deadBlink 0.6s steps(2) infinite;
 }
+
+/* ================= v9: Legend (prestige) ================= */
+.fame-pill { background: #ffd84d22; border-color: #ffd84d; color: #ffd84d; }
+.fame-head { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0 6px; }
+.fame-stars { font-family: Inter, sans-serif; font-weight: 900; font-size: 32px; color: #ffd84d; text-shadow: 0 0 18px #ffd84d66; }
+.fame-sub { color: var(--muted); font-size: 13px; }
+.fame-sub b { color: #5dff9b; }
+.sell-box .evo-next { color: #ffd84d; }
+.sell-list { margin: 8px 0; padding-left: 4px; list-style: none; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.evolve-btn.armed { background: #ffd84d; color: #1a1020; }
+.row.owned-row { opacity: 0.6; border-color: #ffd84d55; }
+.row.owned-row .row-cost { color: #ffd84d; }

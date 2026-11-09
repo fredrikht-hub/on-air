@@ -98,6 +98,7 @@ export function App() {
           <span className="logo-dot" /> ON AIR
         </div>
         <div className="era-pill">{era.emoji} {era.name}</div>
+        {s.fameTotal > 0 && <div className="era-pill fame-pill" title="Fame: every star you ever earned adds 5% to all money">⭐ {s.fame}</div>}
         <div style={{ flex: 1 }} />
         {s.history.length >= 3 && <RoadTo120 />}
         {s.totals.stories >= 3 && (
@@ -192,7 +193,8 @@ function Stats({ onClose }: { onClose: () => void }) {
           <Stat label="Stories filed" value={fmt(s.totals.stories)} />
           <Stat label="Words typed" value={fmt(s.totals.words)} />
           <Stat label="Time played" value={duration(s.totals.playSeconds)} />
-          <Stat label="Lifetime cash" value={money(s.lifetimeCash)} />
+          <Stat label="Lifetime cash" value={money(s.pastCash + s.lifetimeCash)} />
+          {s.sales > 0 && <Stat label="Companies sold" value={fmt(s.sales)} />}
         </div>
         <p className="muted">Your staff work at the speed of your 7-day average. Type faster → everything earns more.</p>
         <button className="big-btn" onClick={onClose}>Close</button>

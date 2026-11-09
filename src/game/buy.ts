@@ -3,7 +3,8 @@ import { money, mult } from './format';
 import { sfx } from './sound';
 import { STAFF, STAFF_BY_ID, staffCost } from './staff';
 import { idleRate, mods, staffRate, useGame, wordBaseValue, type GameData } from './state';
-import { UPGRADES, UPGRADE_BY_ID } from './upgrades';
+import { confetti } from './fx';
+import { LEGEND_BY_ID, UPGRADES, UPGRADE_BY_ID } from './upgrades';
 
 // ---------- toast bus ----------
 export interface Toast { id: number; emoji: string; title: string; lines: string[]; big?: boolean }
@@ -81,11 +82,48 @@ export function buyStaff(id: string, qty: number): boolean {
 }
 
 export function evolve(): boolean {
+  const firstTV = useGame.getState().maxEra < 3;
   if (!useGame.getState().evolve()) {
     sfx.deny();
     return false;
   }
   sfx.evolve();
+  if (firstTV && useGame.getState().era === 3) {
+    window.setTimeout(
+      () => toast({ emoji: '⭐', title: 'Legend unlocked!', lines: ['You can now sell your company for ⭐ Fame.', 'Look for the ⭐ Legend tab.'], big: true }),
+      9000,
+    );
+  }
+  return true;
+}
+
+export function sellCompany(): number {
+  const gain = useGame.getState().sellCompany();
+  if (!gain) {
+    sfx.deny();
+    return 0;
+  }
+  sfx.record();
+  confetti(1.6);
+  const st = useGame.getState();
+  toast({
+    emoji: '🗽',
+    title: `SOLD! +${gain} ⭐ Fame`,
+    lines: [`All money now earns +${Math.round(st.fameTotal * 100 * 0.05)}% forever.`, 'The town built a statue of you!'],
+    big: true,
+  });
+  return gain;
+}
+
+export function buyLegend(id: string): boolean {
+  if (!useGame.getState().buyLegend(id)) {
+    sfx.deny();
+    return false;
+  }
+  const l = LEGEND_BY_ID[id];
+  sfx.golden();
+  confetti(0.5);
+  toast({ emoji: l.emoji, title: `${l.name}!`, lines: [l.desc], big: true });
   return true;
 }
 

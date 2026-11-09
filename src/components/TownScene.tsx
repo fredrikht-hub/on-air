@@ -320,6 +320,18 @@ export function TownScene() {
         rect(ctx, fx + 4, GROUND - 9, 1, 8, '#6b4226');
         rect(ctx, fx - 6, GROUND - 10, 12, 2, mix('#8a4a3a', '#2a2030', night * 0.4));
       }
+      // golden statues of you — one for every company you sold
+      const statues = Math.min(3, useGame.getState().sales);
+      for (let i = 0; i < statues; i++) {
+        const sx2 = 2 + i * 12 - par * 2.5;
+        const stone = mix('#b8b0a8', '#4a4860', night * 0.4);
+        rect(ctx, sx2 + 2, GROUND - 2, 12, 6, stone);
+        rect(ctx, sx2 + 1, GROUND - 3, 14, 1, stone);
+        const gold = characterSprite('mayor', 'happy');
+        const pal = Object.fromEntries(Object.keys(gold.palette).map((k) => [k, k === 'k' ? '#8a6a10' : k === 's' || k === 'c' ? '#e8b828' : '#f2cf5a']));
+        drawSprite(ctx, sprite('statue', gold.rows, pal), sx2, GROUND - 18);
+        if (Math.sin(time * 2 + i) > 0.92) rect(ctx, sx2 + 4 + i, GROUND - 14, 1, 1, '#ffffff');
+      }
       if (t.market) {
         const mx = cx - 66 - par * 2.5;
         rect(ctx, mx, GROUND - 6, 1, 9, '#5a3a24');

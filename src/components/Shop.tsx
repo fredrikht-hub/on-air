@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { ERAS } from '../game/eras';
 import { duration, fmt, money } from '../game/format';
-import { buyStaff, buyUpgrade, evolve, previewUpgrade } from '../game/buy';
+import { buyLegend, buyStaff, buyUpgrade, evolve, previewUpgrade, sellCompany } from '../game/buy';
 import { STAFF, maxAffordable, staffCost } from '../game/staff';
-import { idleRate, staffRate, useGame } from '../game/state';
-import { TAG_INFO, UPGRADES, upgradeTag } from '../game/upgrades';
+import { fameFor, idleRate, prestigeUnlocked, staffRate, useGame } from '../game/state';
+import { FAME_BONUS, LEGEND, TAG_INFO, UPGRADES, upgradeTag } from '../game/upgrades';
 
-type Tab = 'staff' | 'upgrades' | 'evolve';
+type Tab = 'staff' | 'upgrades' | 'evolve' | 'legend';
 
 export function Shop() {
   const [tab, setTab] = useState<Tab>('staff');
@@ -16,6 +16,8 @@ export function Shop() {
   ).length;
   const era = ERAS[s.era];
   const canEvolve = era.evolveCost != null && ERAS[s.era + 1]?.playable && s.cash >= era.evolveCost;
+  const legendOpen = prestigeUnlocked(s) || s.fameTotal > 0;
+  const canPerk = LEGEND.some((l) => !s.legend.includes(l.id) && l.cost <= s.fame && (!l.after || s.legend.includes(l.after)));
 
   return (
     <aside className="shop dimmable">
@@ -31,11 +33,17 @@ export function Shop() {
             🧬 Evolve {canEvolve && <span className="badge pulse">!</span>}
           </button>
         )}
+        {legendOpen && (
+          <button className={`${tab === 'legend' ? 'active' : ''} appear`} onClick={() => setTab('legend')}>
+            ⭐ Legend {canPerk && <span className="badge">!</span>}
+          </button>
+        )}
       </div>
       <div className="shop-body">
         {tab === 'staff' && <StaffTab />}
         {tab === 'upgrades' && <UpgradesTab />}
         {tab === 'evolve' && <EvolveTab />}
+        {tab === 'legend' && <LegendTab />}
       </div>
     </aside>
   );
@@ -179,10 +187,76 @@ function EvolveTab() {
               <div className="shop-note">You keep your staff and upgrades. Words pay {fmt(next.wordBase)}× base and new staff & upgrades appear.</div>
             </>
           ) : (
-            <div className="shop-note">📺 Television arrives in the next update — anchors, Breaking News and Prime Time!</div>
+            <div className="shop-note">{next.emoji} {next.name} arrives in a future update. Meanwhile — try selling your company in the ⭐ Legend tab!</div>
           )}
         </div>
       )}
+    </>
+  );
+}
+
+function LegendTab() {
+  const s = useGame();
+  const [confirm, setConfirm] = useState(false);
+  const gain = fameFor(s.lifetimeCash);
+  const nextStarAt = (gain + 1) ** 2 * 1e9;
+  const bonus = Math.round(s.fameTotal * FAME_BONUS * 100);
+  const canSell = prestigeUnlocked(s) && gain >= 1;
+  return (
+    <>
+      <div className="fame-head">
+        <span className="fame-stars">⭐ {s.fame}</span>
+        <span className="fame-sub">Fame to spend · all money <b>+{bonus}%</b> forever</span>
+      </div>
+
+      <div className="evo-box sell-box">
+        <div className="evo-next">🗽 Sell your company</div>
+        <div className="evo-desc">
+          Sell everything and start over in the Town Square — but now you're <b>famous</b>.
+        </div>
+        <ul className="sell-list">
+          <li>✅ Keep: ⭐ Fame, Legend perks, your typing records</li>
+          <li>❌ Lose: money, helpers, upgrades</li>
+          <li>⭐ Every star = +{FAME_BONUS * 100}% money forever</li>
+        </ul>
+        {prestigeUnlocked(s) ? (
+          <>
+            <button
+              className={`evolve-btn ${canSell ? 'ready' : ''} ${confirm ? 'armed' : ''}`}
+              disabled={!canSell}
+              onClick={() => {
+                if (!confirm) return setConfirm(true);
+                setConfirm(false);
+                sellCompany();
+              }}
+            >
+              {canSell ? (confirm ? `Sure? Click again to sell for ${gain} ⭐` : `SELL for +${gain} ⭐`) : 'Earn more to get your first ⭐'}
+            </button>
+            <div className="shop-note">Next ⭐ when this company has earned {money(nextStarAt)} (now {money(s.lifetimeCash)}).</div>
+          </>
+        ) : (
+          <div className="shop-note">🔒 Reach the 📺 TV era to unlock.</div>
+        )}
+        <div className="shop-note">🏆 Beat your speed record: <b>+1 ⭐</b> · reach a new average (40, 50, 60… WPM): <b>+3 ⭐</b></div>
+      </div>
+
+      <div className="owned-title">Legend perks — kept forever</div>
+      {LEGEND.map((l) => {
+        const owned = s.legend.includes(l.id);
+        const locked = !!l.after && !s.legend.includes(l.after);
+        const can = !owned && !locked && l.cost <= s.fame;
+        return (
+          <button key={l.id} className={`row ${can ? 'can' : ''} ${owned ? 'owned-row' : ''} ${locked ? 'dim' : ''}`} onClick={() => !owned && buyLegend(l.id)}>
+            <span className="row-emoji">{l.emoji}</span>
+            <span className="row-main">
+              <span className="row-title">{l.name}</span>
+              <span className="row-desc">{l.desc}</span>
+              {locked && <span className="row-need">🔒 Buy {LEGEND.find((x) => x.id === l.after)?.name} first</span>}
+            </span>
+            <span className="row-cost">{owned ? '✓' : `${l.cost} ⭐`}</span>
+          </button>
+        );
+      })}
     </>
   );
 }

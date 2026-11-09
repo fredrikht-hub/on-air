@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { ERAS } from './eras';
 import { STAFF, STAFF_BY_ID, staffCost } from './staff';
-import { UPGRADES, UPGRADE_BY_ID, computeMods, type Mods } from './upgrades';
+import { LEGEND_BY_ID, UPGRADES, UPGRADE_BY_ID, computeMods, type Mods } from './upgrades';
 import { advanceArcs, freshArcState, type ArcState } from './stories';
 
 export interface StoryRecord {
@@ -43,6 +43,19 @@ export interface GameData {
   recentHeadlines: string[];
   /** town features the player has already been told about */
   townSeen: string[];
+  // ---------- prestige ----------
+  /** highest era ever reached (selling the company unlocks after reaching TV) */
+  maxEra: number;
+  /** ⭐ Fame you can spend on Legend perks */
+  fame: number;
+  /** every ⭐ ever earned — each one boosts all money forever */
+  fameTotal: number;
+  /** Legend perks owned (kept forever) */
+  legend: string[];
+  /** how many times you sold the company (= statues in the Town Square) */
+  sales: number;
+  /** money earned by companies you already sold */
+  pastCash: number;
 }
 
 export interface ArcRef { id: string; part: number }
@@ -77,6 +90,9 @@ interface Actions {
   hardReset(): void;
   setShout(text: string): void;
   finishIntro(): void;
+  addFame(n: number): void;
+  buyLegend(id: string): boolean;
+  sellCompany(): number;
 }
 
 type Store = GameData & Actions & { offline: OfflineReport | null; lastKeyAt: number; shout: string; boost: Boost | null };
@@ -110,6 +126,12 @@ export function freshData(): GameData {
     wpmMilestone: 0,
     recentHeadlines: [],
     townSeen: [],
+    maxEra: 0,
+    fame: 0,
+    fameTotal: 0,
+    legend: [],
+    sales: 0,
+    pastCash: 0,
   };
 }
 
@@ -119,7 +141,9 @@ function loadData(): GameData {
     if (!raw) return freshData();
     const parsed = JSON.parse(raw) as Partial<GameData>;
     const base = freshData();
-    return { ...base, ...parsed, totals: { ...base.totals, ...parsed.totals }, settings: { ...base.settings, ...parsed.settings }, reveal: { ...base.reveal, ...parsed.reveal }, arcs: { ...base.arcs, ...parsed.arcs } };
+    const merged = { ...base, ...parsed };
+    merged.maxEra = Math.max(merged.maxEra, merged.era);
+    return { ...merged, totals: { ...base.totals, ...parsed.totals }, settings: { ...base.settings, ...parsed.settings }, reveal: { ...base.reveal, ...parsed.reveal }, arcs: { ...base.arcs, ...parsed.arcs } };
   } catch {
     return freshData();
   }
@@ -139,11 +163,15 @@ export function saveData(d: GameData) {
 // ---------- derived values (pure) ----------
 
 let modsCache: { key: string; mods: Mods } | null = null;
-export function mods(d: Pick<GameData, 'upgrades'>): Mods {
-  const key = d.upgrades.join(',');
-  if (modsCache?.key !== key) modsCache = { key, mods: computeMods(d.upgrades) };
+export function mods(d: Pick<GameData, 'upgrades' | 'legend' | 'fameTotal'>): Mods {
+  const key = d.upgrades.join(',') + '|' + d.legend.join(',') + '|' + d.fameTotal;
+  if (modsCache?.key !== key) modsCache = { key, mods: computeMods(d.upgrades, d.legend, d.fameTotal) };
   return modsCache.mods;
 }
+
+/** ⭐ Fame you get for selling a company that earned this much */
+export const fameFor = (lifetimeCash: number) => Math.floor(Math.sqrt(lifetimeCash / 1e9));
+export const prestigeUnlocked = (d: Pick<GameData, 'maxEra'>) => d.maxEra >= 3;
 
 /** average WPM of the last N stories (null if too few) */
 export function recentAvgWpm(d: Pick<GameData, 'history'>, n = 20): number | null {
@@ -358,8 +386,45 @@ export const useGame = create<Store>()((set, get) => ({
     const era = ERAS[s.era];
     const next = ERAS[s.era + 1];
     if (era.evolveCost == null || !next?.playable || s.cash < era.evolveCost) return false;
-    set({ cash: s.cash - era.evolveCost, era: s.era + 1, mood: 65, combo: 0, backlog: Math.max(s.backlog, 5) });
+    set({ cash: s.cash - era.evolveCost, era: s.era + 1, maxEra: Math.max(s.maxEra, s.era + 1), mood: 65, combo: 0, backlog: Math.max(s.backlog, 5) });
     return true;
+  },
+
+  addFame(n) {
+    const s = get();
+    set({ fame: s.fame + n, fameTotal: s.fameTotal + n });
+  },
+
+  buyLegend(id) {
+    const s = get();
+    const l = LEGEND_BY_ID[id];
+    if (!l || s.legend.includes(id) || s.fame < l.cost || (l.after && !s.legend.includes(l.after))) return false;
+    set({ fame: s.fame - l.cost, legend: [...s.legend, id] });
+    return true;
+  },
+
+  sellCompany() {
+    const s = get();
+    const gain = fameFor(s.lifetimeCash);
+    if (!prestigeUnlocked(s) || gain < 1) return 0;
+    const has = (id: string) => s.legend.includes(id);
+    set({
+      fame: s.fame + gain,
+      fameTotal: s.fameTotal + gain,
+      sales: s.sales + 1,
+      pastCash: s.pastCash + s.lifetimeCash,
+      cash: has('l-start') ? 25_000 : 0,
+      lifetimeCash: 0,
+      era: has('l-radio') ? 2 : has('l-paper') ? 1 : 0,
+      staff: {},
+      upgrades: [],
+      backlog: 5,
+      mood: 60,
+      combo: 0,
+      currentStory: null,
+      boost: null,
+    });
+    return gain;
   },
 
   setSound(on) {

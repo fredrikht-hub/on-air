@@ -268,7 +268,14 @@ export function TypingPanel({ paused }: { paused: boolean }) {
     if (storiesBefore >= 3 && e.text.length >= 25 && prevBest > 0 && wpm > prevBest) {
       sfx.record();
       confetti(1.3);
-      toast({ emoji: '🏆', title: `NEW RECORD: ${Math.round(wpm)} WPM!`, lines: [`Your fastest headline ever (old best ${Math.round(prevBest)})`], big: true });
+      const fameOn = useGame.getState().maxEra >= 3;
+      if (fameOn) useGame.getState().addFame(1);
+      toast({
+        emoji: '🏆',
+        title: `NEW RECORD: ${Math.round(wpm)} WPM!`,
+        lines: [`Your fastest headline ever (old best ${Math.round(prevBest)})`, ...(fameOn ? ['+1 ⭐ Fame'] : [])],
+        big: true,
+      });
     }
 
     // average-speed milestones: 30, 40, 50 … 120
@@ -277,14 +284,17 @@ export function TypingPanel({ paused }: { paused: boolean }) {
     if (newAvg != null && after.history.length >= 5) {
       const ms = Math.floor(newAvg / 10) * 10;
       if (ms >= 20 && ms > after.wpmMilestone) {
+        const firstMilestone = after.wpmMilestone === 0;
         after.patch({ wpmMilestone: ms });
-        if (after.wpmMilestone > 0 || ms >= 30) {
+        const fameOn = after.maxEra >= 3 && !firstMilestone;
+        if (fameOn) after.addFame(3);
+        if (!firstMilestone || ms >= 30) {
           confetti(1);
           sfx.fanfare();
           toast({
             emoji: ms >= 120 ? '👑' : '🎉',
             title: ms >= 120 ? 'YOU REACHED 120 WPM! LEGEND!' : `Your average is now ${ms}+ WPM!`,
-            lines: ms >= 120 ? ['You are officially a typing master.'] : [`Only ${120 - ms} WPM to go until 120 🏁`],
+            lines: [...(ms >= 120 ? ['You are officially a typing master.'] : [`Only ${120 - ms} WPM to go until 120 🏁`]), ...(fameOn ? ['+3 ⭐ Fame'] : [])],
             big: true,
           });
         }

@@ -30,7 +30,7 @@ export const BASE_MODS: Mods = {
   moodGain: 1,
 };
 
-type Effect =
+export type Effect =
   | { kind: 'wordMult'; x: number }
   | { kind: 'allStaff'; x: number }
   | { kind: 'staff'; id: string; x: number }
@@ -108,6 +108,35 @@ export const UPGRADES: UpgradeDef[] = [
   { id: 'tv-famous', name: 'Famous Face', emoji: '😎', era: 3, cost: 35_000_000_000_000, desc: "Everybody knows your face — each word also earns more of your helpers' money.", effect: { kind: 'idleShare', add: 1 } },
 ];
 
+// ---------- Legend perks: bought with ⭐ Fame, kept forever (even after selling the company) ----------
+export interface LegendDef {
+  id: string;
+  name: string;
+  emoji: string;
+  cost: number;
+  desc: string;
+  effect?: Effect;
+  /** buy this perk first */
+  after?: string;
+}
+
+export const LEGEND: LegendDef[] = [
+  { id: 'l-start', name: 'Piggy Bank', emoji: '🐷', cost: 3, desc: 'Every new company starts with $25K in the bank.' },
+  { id: 'l-voice', name: 'Famous Voice', emoji: '🎙️', cost: 6, desc: 'People know your voice — your words earn 2×. Forever.', effect: { kind: 'wordMult', x: 2 } },
+  { id: 'l-staff', name: 'Loyal Helpers', emoji: '🤝', cost: 10, desc: 'Helpers love working for a legend — ALL helpers earn 2×.', effect: { kind: 'allStaff', x: 2 } },
+  { id: 'l-lungs', name: 'Legend Lungs', emoji: '🫁', cost: 15, desc: 'Keep your combo going even longer.', effect: { kind: 'comboCap', add: 0.5 } },
+  { id: 'l-luck', name: 'Lucky Star', emoji: '🍀', cost: 20, desc: 'More secret words that pay big.', effect: { kind: 'critChance', add: 0.03 } },
+  { id: 'l-paper', name: 'Newspaper Heir', emoji: '📰', cost: 30, desc: 'Skip the Town Square — new companies start as a Newspaper.' },
+  { id: 'l-away', name: 'Beach House', emoji: '🏖️', cost: 40, desc: 'Relax! Helpers earn 12 hours longer while you are away.', effect: { kind: 'offline', hours: 12 } },
+  { id: 'l-news', name: 'Secret Sources', emoji: '🕵️', cost: 60, desc: 'Fresh news pays even more.', effect: { kind: 'fresh', add: 1 } },
+  { id: 'l-radio', name: 'Radio Royalty', emoji: '📻', cost: 100, desc: 'New companies start as a Radio Station.', after: 'l-paper' },
+  { id: 'l-gold', name: 'Golden Voice', emoji: '✨', cost: 150, desc: 'A voice of pure gold — your words earn 3× more. Forever.', effect: { kind: 'wordMult', x: 3 }, after: 'l-voice' },
+];
+export const LEGEND_BY_ID = Object.fromEntries(LEGEND.map((l) => [l.id, l])) as Record<string, LegendDef>;
+
+/** every ⭐ you ever earned adds this much to ALL money (spending stars doesn't lower it) */
+export const FAME_BONUS = 0.05;
+
 /** upgrade category -> small colored dot in the shop */
 export type UpgradeTag = 'words' | 'helpers' | 'combo' | 'lucky' | 'news' | 'away';
 export const TAG_INFO: Record<UpgradeTag, { color: string; label: string }> = {
@@ -131,12 +160,14 @@ export function upgradeTag(u: UpgradeDef): UpgradeTag {
 
 export const UPGRADE_BY_ID = Object.fromEntries(UPGRADES.map((u) => [u.id, u])) as Record<string, UpgradeDef>;
 
-export function computeMods(owned: string[]): Mods {
+export function computeMods(owned: string[], legend: string[] = [], fameTotal = 0): Mods {
   const m: Mods = { ...BASE_MODS, staffMult: {} };
-  for (const id of owned) {
-    const u = UPGRADE_BY_ID[id];
-    if (!u) continue;
-    const e = u.effect;
+  const fame = 1 + fameTotal * FAME_BONUS;
+  m.wordMult *= fame;
+  m.allStaffMult *= fame;
+  const effects = [...owned.map((id) => UPGRADE_BY_ID[id]?.effect), ...legend.map((id) => LEGEND_BY_ID[id]?.effect)];
+  for (const e of effects) {
+    if (!e) continue;
     switch (e.kind) {
       case 'wordMult': m.wordMult *= e.x; break;
       case 'allStaff': m.allStaffMult *= e.x; break;
